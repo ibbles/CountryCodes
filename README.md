@@ -79,10 +79,3 @@ exist only to define the path to the data contained in the node's children.
 ## Comparing strategies
 
 [//]: # (Comment.)
-
-
-You need to install the UniConvertor software.
-For GNU/Linux: install the package python-uniconvertor.
-For Windows: download it from
-http://sk1project.org/modules.php?name=Products&product=uniconvertor
-and install into your Inkscape's Python location
