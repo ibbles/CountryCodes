@@ -28,6 +28,7 @@ throughout the application's lifetime. This means that whatever work we can do
 at startup to speed up the queries is worth it since the cost of the initial
 work will be amortized by the large number of queries. Within reason of course.
 
+### Linear search
 There are a number of ways to approach this. Arguably, the simplest way is to
 keep all the country codes as a list of strings and for each given phone number
 loop over the country codes until a match is found. This works, but is probably
@@ -35,6 +36,7 @@ not very fast. It does `O(c*d*p)` digit comparisons where `c` is the number of
 country codes, `d` is the average number of digits in a country code and `p` is
 the number of phone numbers tested.
 
+### Binary search
 Whenever we see a linear search through a collection of sortable elements we
 should consider sorting the data and replace the linear search with a binary
 one. This reduces the number of digit comparisons from `O(c*d*p)` to
@@ -44,6 +46,7 @@ but remember that `d` is small and we do need to look at every digit of a countr
 code in order to accept or reject a potential match. I have not been able to
 find a way around that.
 
+### Hash table
 While `log(k)` isn't too bad, we can do better still. A common way to do
 constant time lookups is to use hashing. We insert each country code into a hash
 table and for every given phone number we first test if the single digit prefix
@@ -52,6 +55,7 @@ then three and so on until we find a country code or the leading substring is
 longer than the longest country code. This algorithm is `O(d*p)` digit
 comparisons.
 
+### Trie
 I have not been able to find or come up with something better than `O(d*p)`, but
 I have found an alternative data structure that gives the same `O`. A
 [Trie](https://en.wikipedia.org/wiki/Trie), also called a prefix tree, is a tree
@@ -69,13 +73,28 @@ Assume that we are given the following country codes:
 
 
 This is the resulting trie:
+
 ![](/images/trie_ex.png "")
 
 A few things to note. First, the root node contains "^", which is used to denote
-the start of a string. Secondly, data may appear not only in the root nodes, but
-in internal nodes as well. Third, some nodes doesn't contain any data. They
+the start of a string. Secondly, data may appear not only in the leave nodes,
+but in internal nodes as well. Third, some nodes doesn't contain any data. They
 exist only to define the path to the data contained in the node's children.
+Lastly, to find the country code of a number we walk down the trie as dictated
+by the first few digits of the number and stop as soon as we find a non-empty
+node.
 
-## Comparing strategies
+## Comparing the strategies
+
+I have deliberately not written `time complexity` when discussing the runtime
+complexity of the algorithms and instead used `number of digit comparisons`.
+This is because not all comparisons are created equal. Caches are all the rage
+these days and since this problem is low on computation and high in data access
+my belief is that whichever algorithm has the fewest cache misses per phone
+number is that one that will be the fastest.
+
+The linear search, in the worst case, will have to look at every byte of every
+country code for every phone number. This sounds really bad, but if we pack all
+the country codes after one another then we get
 
 [//]: # (Comment.)
