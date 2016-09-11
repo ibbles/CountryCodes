@@ -1,0 +1,40 @@
+digraph {
+    // Root
+    node_root [label="^"]
+
+    // Level 1
+
+    node_2 [label="2"]
+    node_root -> node_2
+
+    node_3 [label="3"]
+    node_root -> node_3
+
+    node_8 [label="8\nBH"]
+    node_root -> node_8
+
+    // Level 2
+
+    node_22 [label="2"]
+    node_2 -> node_22
+
+    node_32 [label="2\nBE"]
+    node_3 -> node_32
+
+    node_35 [label="5"]
+    node_3 -> node_35
+
+    node_88 [label="8"]
+    node_8 -> node_88
+
+    // Level 3
+
+    node_226 [label="6\nBF"]
+    node_22 -> node_226
+
+    node_359 [label="9\nBG"]
+    node_35 -> node_359
+
+    node_880 [label="0\nBD"]
+    node_88 -> node_880
+}
