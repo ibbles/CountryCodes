@@ -69,7 +69,7 @@ Assume that we are given the following country codes:
 
 
 This is the resulting trie:
-![](/images/trie_ex.svg "")
+![](/images/trie_ex.png "")
 
 A few things to note. First, the root node contains "^", which is used to denote
 the start of a string. Secondly, data may appear not only in the root nodes, but
