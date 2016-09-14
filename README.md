@@ -114,9 +114,18 @@ made the following assumptions:
     - Phone numbers may be created randomly.
 
 
-## Implementing a trie
 
+## Linear search
 
+## Binary search
+
+## Hash table(s)
+
+[//]: # (Note on perfect hashing since we have a fixed set of country codes.)
+
+## Trie
+
+## Common utilities
 
 
 [//]: # (Comment.)
