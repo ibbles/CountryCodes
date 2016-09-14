@@ -9,7 +9,8 @@ determine which country each phone number belongs to.
 
 The country code is always the first few digits of the phone number. This is a
 type of string matching problem where we want to find the country code that is
-equal to the first few digits of the phone number.
+equal to the first few digits of the phone number. If a phone number matches
+multiple country codes then the longest match is chosen.
 
 The list of country codes used can be found at http://country.io/phone.json.
 
@@ -102,6 +103,15 @@ still have plenty of room left for whatever acceleration structure we choose.
 
 ## Assumptions
 
+When striving for the fastest possible implementation it is important to
+identify unspecified details in the problem description and chose whatever
+interpretation that allows for the fastest implementation. In this case I have
+made the following assumptions:
+
+    - If a phone number matches multiple country codes of equal length, then any
+      one of them may be returned.
+    - All phone numbers have the the same length, 8 digits.
+    - Phone numbers may be created randomly.
 
 
 ## Implementing a trie
