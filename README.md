@@ -84,17 +84,29 @@ Lastly, to find the country code of a number we walk down the trie as dictated
 by the first few digits of the number and stop as soon as we find a non-empty
 node.
 
-## Comparing the strategies
+### A note on caches
 
-I have deliberately not written `time complexity` when discussing the runtime
-complexity of the algorithms and instead used `number of digit comparisons`.
-This is because not all comparisons are created equal. Caches are all the rage
-these days and since this problem is low on computation and high in data access
-my belief is that whichever algorithm has the fewest cache misses per phone
-number is that one that will be the fastest.
+Caches are all the rage these days. The ever widening processor-memory
+performance gap is making memory accesses more and more expensive in terms of
+CPU cycles. This has made cache-friendly access patterns more important than
+ever. I will discuss the memory access patterns for each implementation strategy
+later in this text.
 
-The linear search, in the worst case, will have to look at every byte of every
-country code for every phone number. This sounds really bad, but if we pack all
-the country codes after one another then we get
+However, in addition to the access patterns, the size of the working set must be
+taken into account as well. The input file, http://country.io/phone.json, is 3.3
+KB and it is reasonable to believe that storing the data in memory will use a
+comparable amount of space. The CPU I'll be testing on has 16 KB of L1 data
+cache per core. This means that we can put the entire data set into L1 cache and
+still have plenty of room left for whatever acceleration structure we choose.
+
+
+## Assumptions
+
+
+
+## Implementing a trie
+
+
+
 
 [//]: # (Comment.)
