@@ -1,33 +1,39 @@
 # CountryCodes
 
+This post is ... discussion on performance considerations in implementation.
+
 ## Problem description
 
 Every now and then some of my peers and I come up with random programming
-challenges. This time the task was to write the fastest country code finder.
-That is, given a list of country codes and a collection of phone numbers,
-determine which country each phone number belongs to.
+challenges for ourselves. This time the task was to write the fastest country
+code finder. That is, given a list of country codes and a collection of phone
+numbers, determine which country each phone number belongs to.
 
 The country code is always the first few digits of the phone number. This is a
 type of string matching problem where we want to find the country code that is
 equal to the first few digits of the phone number. If a phone number matches
-multiple country codes then the longest match is chosen.
+multiple country codes then the longest match should be chosen.
 
 The list of country codes used can be found at http://country.io/phone.json.
 
-
 ## Strategies
 
-A few observations on the problem. Both the country codes and the phone numbers
-are short. There are many string searching algorithms, but the ones I know about
-are designed for finding a search string somewhere in a long text. I this case
-we know where the sought string should be, at the very start. And we have many
-strings to search for. We also have lots of phone numbers in which to search for
-the country code.
+A few observations on the problem. First and foremost, both the country codes
+and the phone numbers are numbers but that doesn't mean that we have use a
+number type, such as `int` or `long`, to store them in memory. In fact, it is
+most likely better to store them as strings. We're not interested in arithmetic,
+we're doing string matching.
+
+Both the country codes and the phone numbers are short. There are many string
+searching algorithms, but the ones I know about are designed for finding a
+search string somewhere in a long text. I this case we know where the sought
+string should be, at the very start. We have many country codes to search for
+and also lots of phone numbers to search in.
 
 An important observation is that the the set of country codes is constant
 throughout the application's lifetime. This means that whatever work we can do
 at startup to speed up the queries is worth it since the cost of the initial
-work will be amortized by the large number of queries. Within reason of course.
+work will be amortized by the large number of queries. Within reason, of course.
 
 ### Linear search
 There are a number of ways to approach this. Arguably, the simplest way is to
@@ -36,6 +42,10 @@ loop over the country codes until a match is found. This works, but is probably
 not very fast. It does `O(c*d*p)` digit comparisons where `c` is the number of
 country codes, `d` is the average number of digits in a country code and `p` is
 the number of phone numbers tested.
+
+Note that the problem description dictate that we find the longest country code
+that matches. We should therefore  the list by longest first so that we know
+that the first match is also the longest one.
 
 ### Binary search
 Whenever we see a linear search through a collection of sortable elements we
@@ -66,16 +76,16 @@ example is in order.
 
 Assume that we are given the following country codes:
 
- - "BD": "880"
- - "BE": "32"
- - "BF": "226"
- - "BG": "359"
- - "BH": "8"
+- "BD": "880"
+- "BE": "32"
+- "BF": "226"
+- "BG": "359"
+- "BH": "8"
 
 
 This is the resulting trie:
 
-![](/images/trie_ex.png "")
+![](./images/trie_ex.png "")
 
 A few things to note. First, the root node contains "^", which is used to denote
 the start of a string. Secondly, data may appear not only in the leave nodes,
@@ -113,19 +123,45 @@ made the following assumptions:
     - All phone numbers have the the same length, 8 digits.
     - Phone numbers may be created randomly.
 
-
-
 ## Linear search
+
+The linear search algorithm is implemented in `LinearSearch.cpp` and is as
+straightforward as it gets. A `vector` contains the country code-id pairs,
+sorted by code length, and a number lookup simply iterates over the vector and
+compares digit by digit until the first match is found.
+
+The base implementation uses `std::string` for storing the country codes. This
+may be sub-optimal since `std::string` stores its data on the heap and because
+of this moving from from one country code to the next results in a random jump
+in memory. Fortunately, country codes are short and we therefore benefit from
+the small string optimization that is provided by many standard library
+implementations. Different implementations made different decisions on what
+constitutes a *small string*, but according to
+http://info.prelert.com/blog/cpp-stdstring-implementations the limit is at least
+15 characters for the most common implementations. We're good.
+
+We can save a few bytes per string by rolling our own packed string array
+format, a `std::string` is 32 bytes on my compiler and the average country code
+length is about 3 bytes, but I doubt it will make linear search competitive with
+the other algorithms. Time to move on.
 
 ## Binary search
 
+To allow for binary search through a data set the data must be ordered so that
+we can look at any element and determine on which side of that element the
+sought element must reside. In our case a regular alphabetical ordering achieves
+just that. One complicating factor is that a phone number may match several
+country codes and we must find the longest one. But the alphabetical sorting
+will at least place all such country codes next to each other so when the first
+match is found we can do a linear search forward for the last code that matches.
+
 ## Hash table(s)
 
-[//]: # (Note on perfect hashing since we have a fixed set of country codes.)
+[//]: # "Note on perfect hashing since we have a fixed set of country codes."
 
 ## Trie
 
 ## Common utilities
 
 
-[//]: # (Comment.)
+[//]: # "Comment."
