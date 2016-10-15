@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+
 #include <cstring>
 
 
@@ -17,6 +18,15 @@ struct CountryId
     {
     }
 };
+
+
+
+std::ostream& operator<<(std::ostream & out, CountryId const & id)
+{
+    out << id.id[0] << id.id[1];
+    return out;
+}
+
 
 
 static CountryId not_found {'\0', '\0'};
@@ -291,6 +301,9 @@ public:
         m_countries.emplace_back("974", "QA");
         m_countries.emplace_back("258", "MZ");
 
+        // If there are multiple matches then the longest one should be returned.
+        // We therefore sort the country codes so that the longest ones are tested
+        // first.
         std::sort(std::begin(m_countries), std::end(m_countries),
                   [](Country const & lhs, Country const & rhs)
                   {
@@ -344,6 +357,7 @@ private:
 };
 
 
+
 int main()
 {
     PhoneBook phoneBook;
@@ -359,8 +373,7 @@ int main()
             CountryId country = phoneBook.getCountry(number);
             if (country.id[0] != 0)
             {
-                std::cout << "Number '" << number << "' has country "
-                          << country.id[0] << country.id[1] << "\n";
+                std::cout << "Number '" << number << "' has country " << country.id << '\n';
             }
             else
             {
