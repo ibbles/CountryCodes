@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+
 #include <cstring>
 
 
@@ -11,363 +12,353 @@
 struct CountryId
 {
     char id[2];
+
+    CountryId(char c0, char c1)
+        : id {c0, c1}
+    {
+    }
 };
 
+
+
+std::ostream& operator<<(std::ostream & out, CountryId const & id)
+{
+    out << id.id[0] << id.id[1];
+    return out;
+}
+
+
+
+static CountryId not_found {'\0', '\0'};
 
 
 struct Country
 {
     std::string code;
-    std::string name;
+    CountryId id;
+
+    Country(char const * code, char const * id)
+        : code(code)
+        , id{id[0], id[1]}
+    {
+    }
 };
 
 
 
 class PhoneBook
 {
-private:
-    using Country = std::pair<std::string, std::string>;
-
 public:
     PhoneBook()
     {
-        std::vector<Country> countries;
-        countries.reserve(246);
-        m_codeOffsets.reserve(246);
         m_countries.reserve(246);
 
         // http://country.io/phone.json
-        countries.push_back(std::make_pair("880", "BD"));
-        countries.push_back(std::make_pair("32", "BE"));
-        countries.push_back(std::make_pair("226", "BF"));
-        countries.push_back(std::make_pair("359", "BG"));
-        countries.push_back(std::make_pair("387", "BA"));
-        countries.push_back(std::make_pair("1246", "BB"));
-        countries.push_back(std::make_pair("681", "WF"));
-        countries.push_back(std::make_pair("590", "BL"));
-        countries.push_back(std::make_pair("1441", "BM"));
-        countries.push_back(std::make_pair("673", "BN"));
-        countries.push_back(std::make_pair("591", "BO"));
-        countries.push_back(std::make_pair("973", "BH"));
-        countries.push_back(std::make_pair("257", "BI"));
-        countries.push_back(std::make_pair("229", "BJ"));
-        countries.push_back(std::make_pair("975", "BT"));
-        countries.push_back(std::make_pair("1876", "JM"));
-        countries.push_back(std::make_pair("267", "BW"));
-        countries.push_back(std::make_pair("685", "WS"));
-        countries.push_back(std::make_pair("599", "BQ"));
-        countries.push_back(std::make_pair("55", "BR"));
-        countries.push_back(std::make_pair("1242", "BS"));
-        countries.push_back(std::make_pair("441534", "JE"));
-        countries.push_back(std::make_pair("375", "BY"));
-        countries.push_back(std::make_pair("501", "BZ"));
-        countries.push_back(std::make_pair("7", "RU"));
-        countries.push_back(std::make_pair("250", "RW"));
-        countries.push_back(std::make_pair("381", "RS"));
-        countries.push_back(std::make_pair("670", "TL"));
-        countries.push_back(std::make_pair("262", "RE"));
-        countries.push_back(std::make_pair("993", "TM"));
-        countries.push_back(std::make_pair("992", "TJ"));
-        countries.push_back(std::make_pair("40", "RO"));
-        countries.push_back(std::make_pair("690", "TK"));
-        countries.push_back(std::make_pair("245", "GW"));
-        countries.push_back(std::make_pair("1671", "GU"));
-        countries.push_back(std::make_pair("502", "GT"));
-        countries.push_back(std::make_pair("30", "GR"));
-        countries.push_back(std::make_pair("240", "GQ"));
-        countries.push_back(std::make_pair("590", "GP"));
-        countries.push_back(std::make_pair("81", "JP"));
-        countries.push_back(std::make_pair("592", "GY"));
-        countries.push_back(std::make_pair("441481", "GG"));
-        countries.push_back(std::make_pair("594", "GF"));
-        countries.push_back(std::make_pair("995", "GE"));
-        countries.push_back(std::make_pair("1473", "GD"));
-        countries.push_back(std::make_pair("44", "GB"));
-        countries.push_back(std::make_pair("241", "GA"));
-        countries.push_back(std::make_pair("503", "SV"));
-        countries.push_back(std::make_pair("224", "GN"));
-        countries.push_back(std::make_pair("220", "GM"));
-        countries.push_back(std::make_pair("299", "GL"));
-        countries.push_back(std::make_pair("350", "GI"));
-        countries.push_back(std::make_pair("233", "GH"));
-        countries.push_back(std::make_pair("968", "OM"));
-        countries.push_back(std::make_pair("216", "TN"));
-        countries.push_back(std::make_pair("962", "JO"));
-        countries.push_back(std::make_pair("385", "HR"));
-        countries.push_back(std::make_pair("509", "HT"));
-        countries.push_back(std::make_pair("36", "HU"));
-        countries.push_back(std::make_pair("852", "HK"));
-        countries.push_back(std::make_pair("504", "HN"));
-        countries.push_back(std::make_pair("58", "VE"));
-        countries.push_back(std::make_pair("1787", "PR"));
-        countries.push_back(std::make_pair("1939", "PR"));
-        countries.push_back(std::make_pair("970", "PS"));
-        countries.push_back(std::make_pair("680", "PW"));
-        countries.push_back(std::make_pair("351", "PT"));
-        countries.push_back(std::make_pair("47", "SJ"));
-        countries.push_back(std::make_pair("595", "PY"));
-        countries.push_back(std::make_pair("964", "IQ"));
-        countries.push_back(std::make_pair("507", "PA"));
-        countries.push_back(std::make_pair("689", "PF"));
-        countries.push_back(std::make_pair("675", "PG"));
-        countries.push_back(std::make_pair("51", "PE"));
-        countries.push_back(std::make_pair("92", "PK"));
-        countries.push_back(std::make_pair("63", "PH"));
-        countries.push_back(std::make_pair("870", "PN"));
-        countries.push_back(std::make_pair("48", "PL"));
-        countries.push_back(std::make_pair("508", "PM"));
-        countries.push_back(std::make_pair("260", "ZM"));
-        countries.push_back(std::make_pair("212", "EH"));
-        countries.push_back(std::make_pair("372", "EE"));
-        countries.push_back(std::make_pair("20", "EG"));
-        countries.push_back(std::make_pair("27", "ZA"));
-        countries.push_back(std::make_pair("593", "EC"));
-        countries.push_back(std::make_pair("39", "IT"));
-        countries.push_back(std::make_pair("84", "VN"));
-        countries.push_back(std::make_pair("677", "SB"));
-        countries.push_back(std::make_pair("251", "ET"));
-        countries.push_back(std::make_pair("252", "SO"));
-        countries.push_back(std::make_pair("263", "ZW"));
-        countries.push_back(std::make_pair("966", "SA"));
-        countries.push_back(std::make_pair("34", "ES"));
-        countries.push_back(std::make_pair("291", "ER"));
-        countries.push_back(std::make_pair("382", "ME"));
-        countries.push_back(std::make_pair("373", "MD"));
-        countries.push_back(std::make_pair("261", "MG"));
-        countries.push_back(std::make_pair("590", "MF"));
-        countries.push_back(std::make_pair("212", "MA"));
-        countries.push_back(std::make_pair("377", "MC"));
-        countries.push_back(std::make_pair("998", "UZ"));
-        countries.push_back(std::make_pair("95", "MM"));
-        countries.push_back(std::make_pair("223", "ML"));
-        countries.push_back(std::make_pair("853", "MO"));
-        countries.push_back(std::make_pair("976", "MN"));
-        countries.push_back(std::make_pair("692", "MH"));
-        countries.push_back(std::make_pair("389", "MK"));
-        countries.push_back(std::make_pair("230", "MU"));
-        countries.push_back(std::make_pair("356", "MT"));
-        countries.push_back(std::make_pair("265", "MW"));
-        countries.push_back(std::make_pair("960", "MV"));
-        countries.push_back(std::make_pair("596", "MQ"));
-        countries.push_back(std::make_pair("1670", "MP"));
-        countries.push_back(std::make_pair("1664", "MS"));
-        countries.push_back(std::make_pair("222", "MR"));
-        countries.push_back(std::make_pair("441624", "IM"));
-        countries.push_back(std::make_pair("256", "UG"));
-        countries.push_back(std::make_pair("255", "TZ"));
-        countries.push_back(std::make_pair("60", "MY"));
-        countries.push_back(std::make_pair("52", "MX"));
-        countries.push_back(std::make_pair("972", "IL"));
-        countries.push_back(std::make_pair("33", "FR"));
-        countries.push_back(std::make_pair("246", "IO"));
-        countries.push_back(std::make_pair("290", "SH"));
-        countries.push_back(std::make_pair("358", "FI"));
-        countries.push_back(std::make_pair("679", "FJ"));
-        countries.push_back(std::make_pair("500", "FK"));
-        countries.push_back(std::make_pair("691", "FM"));
-        countries.push_back(std::make_pair("298", "FO"));
-        countries.push_back(std::make_pair("505", "NI"));
-        countries.push_back(std::make_pair("31", "NL"));
-        countries.push_back(std::make_pair("47", "NO"));
-        countries.push_back(std::make_pair("264", "NA"));
-        countries.push_back(std::make_pair("678", "VU"));
-        countries.push_back(std::make_pair("687", "NC"));
-        countries.push_back(std::make_pair("227", "NE"));
-        countries.push_back(std::make_pair("672", "NF"));
-        countries.push_back(std::make_pair("234", "NG"));
-        countries.push_back(std::make_pair("64", "NZ"));
-        countries.push_back(std::make_pair("977", "NP"));
-        countries.push_back(std::make_pair("674", "NR"));
-        countries.push_back(std::make_pair("683", "NU"));
-        countries.push_back(std::make_pair("682", "CK"));
-        countries.push_back(std::make_pair("225", "CI"));
-        countries.push_back(std::make_pair("41", "CH"));
-        countries.push_back(std::make_pair("57", "CO"));
-        countries.push_back(std::make_pair("86", "CN"));
-        countries.push_back(std::make_pair("237", "CM"));
-        countries.push_back(std::make_pair("56", "CL"));
-        countries.push_back(std::make_pair("61", "CC"));
-        countries.push_back(std::make_pair("1", "CA"));
-        countries.push_back(std::make_pair("242", "CG"));
-        countries.push_back(std::make_pair("236", "CF"));
-        countries.push_back(std::make_pair("243", "CD"));
-        countries.push_back(std::make_pair("420", "CZ"));
-        countries.push_back(std::make_pair("357", "CY"));
-        countries.push_back(std::make_pair("61", "CX"));
-        countries.push_back(std::make_pair("506", "CR"));
-        countries.push_back(std::make_pair("599", "CW"));
-        countries.push_back(std::make_pair("238", "CV"));
-        countries.push_back(std::make_pair("53", "CU"));
-        countries.push_back(std::make_pair("268", "SZ"));
-        countries.push_back(std::make_pair("963", "SY"));
-        countries.push_back(std::make_pair("599", "SX"));
-        countries.push_back(std::make_pair("996", "KG"));
-        countries.push_back(std::make_pair("254", "KE"));
-        countries.push_back(std::make_pair("211", "SS"));
-        countries.push_back(std::make_pair("597", "SR"));
-        countries.push_back(std::make_pair("686", "KI"));
-        countries.push_back(std::make_pair("855", "KH"));
-        countries.push_back(std::make_pair("1869", "KN"));
-        countries.push_back(std::make_pair("269", "KM"));
-        countries.push_back(std::make_pair("239", "ST"));
-        countries.push_back(std::make_pair("421", "SK"));
-        countries.push_back(std::make_pair("82", "KR"));
-        countries.push_back(std::make_pair("386", "SI"));
-        countries.push_back(std::make_pair("850", "KP"));
-        countries.push_back(std::make_pair("965", "KW"));
-        countries.push_back(std::make_pair("221", "SN"));
-        countries.push_back(std::make_pair("378", "SM"));
-        countries.push_back(std::make_pair("232", "SL"));
-        countries.push_back(std::make_pair("248", "SC"));
-        countries.push_back(std::make_pair("7", "KZ"));
-        countries.push_back(std::make_pair("1345", "KY"));
-        countries.push_back(std::make_pair("65", "SG"));
-        countries.push_back(std::make_pair("46", "SE"));
-        countries.push_back(std::make_pair("249", "SD"));
-        countries.push_back(std::make_pair("1809", "DO"));
-        countries.push_back(std::make_pair("1829", "DO"));
-        countries.push_back(std::make_pair("1767", "DM"));
-        countries.push_back(std::make_pair("253", "DJ"));
-        countries.push_back(std::make_pair("45", "DK"));
-        countries.push_back(std::make_pair("1284", "VG"));
-        countries.push_back(std::make_pair("49", "DE"));
-        countries.push_back(std::make_pair("967", "YE"));
-        countries.push_back(std::make_pair("213", "DZ"));
-        countries.push_back(std::make_pair("1", "US"));
-        countries.push_back(std::make_pair("598", "UY"));
-        countries.push_back(std::make_pair("262", "YT"));
-        countries.push_back(std::make_pair("1", "UM"));
-        countries.push_back(std::make_pair("961", "LB"));
-        countries.push_back(std::make_pair("1758", "LC"));
-        countries.push_back(std::make_pair("856", "LA"));
-        countries.push_back(std::make_pair("688", "TV"));
-        countries.push_back(std::make_pair("886", "TW"));
-        countries.push_back(std::make_pair("1868", "TT"));
-        countries.push_back(std::make_pair("90", "TR"));
-        countries.push_back(std::make_pair("94", "LK"));
-        countries.push_back(std::make_pair("423", "LI"));
-        countries.push_back(std::make_pair("371", "LV"));
-        countries.push_back(std::make_pair("676", "TO"));
-        countries.push_back(std::make_pair("370", "LT"));
-        countries.push_back(std::make_pair("352", "LU"));
-        countries.push_back(std::make_pair("231", "LR"));
-        countries.push_back(std::make_pair("266", "LS"));
-        countries.push_back(std::make_pair("66", "TH"));
-        countries.push_back(std::make_pair("228", "TG"));
-        countries.push_back(std::make_pair("235", "TD"));
-        countries.push_back(std::make_pair("1649", "TC"));
-        countries.push_back(std::make_pair("218", "LY"));
-        countries.push_back(std::make_pair("379", "VA"));
-        countries.push_back(std::make_pair("1784", "VC"));
-        countries.push_back(std::make_pair("971", "AE"));
-        countries.push_back(std::make_pair("376", "AD"));
-        countries.push_back(std::make_pair("1268", "AG"));
-        countries.push_back(std::make_pair("93", "AF"));
-        countries.push_back(std::make_pair("1264", "AI"));
-        countries.push_back(std::make_pair("1340", "VI"));
-        countries.push_back(std::make_pair("354", "IS"));
-        countries.push_back(std::make_pair("98", "IR"));
-        countries.push_back(std::make_pair("374", "AM"));
-        countries.push_back(std::make_pair("355", "AL"));
-        countries.push_back(std::make_pair("244", "AO"));
-        countries.push_back(std::make_pair("1684", "AS"));
-        countries.push_back(std::make_pair("54", "AR"));
-        countries.push_back(std::make_pair("61", "AU"));
-        countries.push_back(std::make_pair("43", "AT"));
-        countries.push_back(std::make_pair("297", "AW"));
-        countries.push_back(std::make_pair("91", "IN"));
-        countries.push_back(std::make_pair("35818", "AX"));
-        countries.push_back(std::make_pair("994", "AZ"));
-        countries.push_back(std::make_pair("353", "IE"));
-        countries.push_back(std::make_pair("62", "ID"));
-        countries.push_back(std::make_pair("380", "UA"));
-        countries.push_back(std::make_pair("974", "QA"));
-        countries.push_back(std::make_pair("258", "MZ"));
+        m_countries.emplace_back("880", "BD");
+        m_countries.emplace_back("32", "BE");
+        m_countries.emplace_back("226", "BF");
+        m_countries.emplace_back("359", "BG");
+        m_countries.emplace_back("387", "BA");
+        m_countries.emplace_back("1246", "BB");
+        m_countries.emplace_back("681", "WF");
+        m_countries.emplace_back("590", "BL");
+        m_countries.emplace_back("1441", "BM");
+        m_countries.emplace_back("673", "BN");
+        m_countries.emplace_back("591", "BO");
+        m_countries.emplace_back("973", "BH");
+        m_countries.emplace_back("257", "BI");
+        m_countries.emplace_back("229", "BJ");
+        m_countries.emplace_back("975", "BT");
+        m_countries.emplace_back("1876", "JM");
+        m_countries.emplace_back("267", "BW");
+        m_countries.emplace_back("685", "WS");
+        m_countries.emplace_back("599", "BQ");
+        m_countries.emplace_back("55", "BR");
+        m_countries.emplace_back("1242", "BS");
+        m_countries.emplace_back("441534", "JE");
+        m_countries.emplace_back("375", "BY");
+        m_countries.emplace_back("501", "BZ");
+        m_countries.emplace_back("7", "RU");
+        m_countries.emplace_back("250", "RW");
+        m_countries.emplace_back("381", "RS");
+        m_countries.emplace_back("670", "TL");
+        m_countries.emplace_back("262", "RE");
+        m_countries.emplace_back("993", "TM");
+        m_countries.emplace_back("992", "TJ");
+        m_countries.emplace_back("40", "RO");
+        m_countries.emplace_back("690", "TK");
+        m_countries.emplace_back("245", "GW");
+        m_countries.emplace_back("1671", "GU");
+        m_countries.emplace_back("502", "GT");
+        m_countries.emplace_back("30", "GR");
+        m_countries.emplace_back("240", "GQ");
+        m_countries.emplace_back("590", "GP");
+        m_countries.emplace_back("81", "JP");
+        m_countries.emplace_back("592", "GY");
+        m_countries.emplace_back("441481", "GG");
+        m_countries.emplace_back("594", "GF");
+        m_countries.emplace_back("995", "GE");
+        m_countries.emplace_back("1473", "GD");
+        m_countries.emplace_back("44", "GB");
+        m_countries.emplace_back("241", "GA");
+        m_countries.emplace_back("503", "SV");
+        m_countries.emplace_back("224", "GN");
+        m_countries.emplace_back("220", "GM");
+        m_countries.emplace_back("299", "GL");
+        m_countries.emplace_back("350", "GI");
+        m_countries.emplace_back("233", "GH");
+        m_countries.emplace_back("968", "OM");
+        m_countries.emplace_back("216", "TN");
+        m_countries.emplace_back("962", "JO");
+        m_countries.emplace_back("385", "HR");
+        m_countries.emplace_back("509", "HT");
+        m_countries.emplace_back("36", "HU");
+        m_countries.emplace_back("852", "HK");
+        m_countries.emplace_back("504", "HN");
+        m_countries.emplace_back("58", "VE");
+        m_countries.emplace_back("1787", "PR");
+        m_countries.emplace_back("1939", "PR");
+        m_countries.emplace_back("970", "PS");
+        m_countries.emplace_back("680", "PW");
+        m_countries.emplace_back("351", "PT");
+        m_countries.emplace_back("47", "SJ");
+        m_countries.emplace_back("595", "PY");
+        m_countries.emplace_back("964", "IQ");
+        m_countries.emplace_back("507", "PA");
+        m_countries.emplace_back("689", "PF");
+        m_countries.emplace_back("675", "PG");
+        m_countries.emplace_back("51", "PE");
+        m_countries.emplace_back("92", "PK");
+        m_countries.emplace_back("63", "PH");
+        m_countries.emplace_back("870", "PN");
+        m_countries.emplace_back("48", "PL");
+        m_countries.emplace_back("508", "PM");
+        m_countries.emplace_back("260", "ZM");
+        m_countries.emplace_back("212", "EH");
+        m_countries.emplace_back("372", "EE");
+        m_countries.emplace_back("20", "EG");
+        m_countries.emplace_back("27", "ZA");
+        m_countries.emplace_back("593", "EC");
+        m_countries.emplace_back("39", "IT");
+        m_countries.emplace_back("84", "VN");
+        m_countries.emplace_back("677", "SB");
+        m_countries.emplace_back("251", "ET");
+        m_countries.emplace_back("252", "SO");
+        m_countries.emplace_back("263", "ZW");
+        m_countries.emplace_back("966", "SA");
+        m_countries.emplace_back("34", "ES");
+        m_countries.emplace_back("291", "ER");
+        m_countries.emplace_back("382", "ME");
+        m_countries.emplace_back("373", "MD");
+        m_countries.emplace_back("261", "MG");
+        m_countries.emplace_back("590", "MF");
+        m_countries.emplace_back("212", "MA");
+        m_countries.emplace_back("377", "MC");
+        m_countries.emplace_back("998", "UZ");
+        m_countries.emplace_back("95", "MM");
+        m_countries.emplace_back("223", "ML");
+        m_countries.emplace_back("853", "MO");
+        m_countries.emplace_back("976", "MN");
+        m_countries.emplace_back("692", "MH");
+        m_countries.emplace_back("389", "MK");
+        m_countries.emplace_back("230", "MU");
+        m_countries.emplace_back("356", "MT");
+        m_countries.emplace_back("265", "MW");
+        m_countries.emplace_back("960", "MV");
+        m_countries.emplace_back("596", "MQ");
+        m_countries.emplace_back("1670", "MP");
+        m_countries.emplace_back("1664", "MS");
+        m_countries.emplace_back("222", "MR");
+        m_countries.emplace_back("441624", "IM");
+        m_countries.emplace_back("256", "UG");
+        m_countries.emplace_back("255", "TZ");
+        m_countries.emplace_back("60", "MY");
+        m_countries.emplace_back("52", "MX");
+        m_countries.emplace_back("972", "IL");
+        m_countries.emplace_back("33", "FR");
+        m_countries.emplace_back("246", "IO");
+        m_countries.emplace_back("290", "SH");
+        m_countries.emplace_back("358", "FI");
+        m_countries.emplace_back("679", "FJ");
+        m_countries.emplace_back("500", "FK");
+        m_countries.emplace_back("691", "FM");
+        m_countries.emplace_back("298", "FO");
+        m_countries.emplace_back("505", "NI");
+        m_countries.emplace_back("31", "NL");
+        m_countries.emplace_back("47", "NO");
+        m_countries.emplace_back("264", "NA");
+        m_countries.emplace_back("678", "VU");
+        m_countries.emplace_back("687", "NC");
+        m_countries.emplace_back("227", "NE");
+        m_countries.emplace_back("672", "NF");
+        m_countries.emplace_back("234", "NG");
+        m_countries.emplace_back("64", "NZ");
+        m_countries.emplace_back("977", "NP");
+        m_countries.emplace_back("674", "NR");
+        m_countries.emplace_back("683", "NU");
+        m_countries.emplace_back("682", "CK");
+        m_countries.emplace_back("225", "CI");
+        m_countries.emplace_back("41", "CH");
+        m_countries.emplace_back("57", "CO");
+        m_countries.emplace_back("86", "CN");
+        m_countries.emplace_back("237", "CM");
+        m_countries.emplace_back("56", "CL");
+        m_countries.emplace_back("61", "CC");
+        m_countries.emplace_back("1", "CA");
+        m_countries.emplace_back("242", "CG");
+        m_countries.emplace_back("236", "CF");
+        m_countries.emplace_back("243", "CD");
+        m_countries.emplace_back("420", "CZ");
+        m_countries.emplace_back("357", "CY");
+        m_countries.emplace_back("61", "CX");
+        m_countries.emplace_back("506", "CR");
+        m_countries.emplace_back("599", "CW");
+        m_countries.emplace_back("238", "CV");
+        m_countries.emplace_back("53", "CU");
+        m_countries.emplace_back("268", "SZ");
+        m_countries.emplace_back("963", "SY");
+        m_countries.emplace_back("599", "SX");
+        m_countries.emplace_back("996", "KG");
+        m_countries.emplace_back("254", "KE");
+        m_countries.emplace_back("211", "SS");
+        m_countries.emplace_back("597", "SR");
+        m_countries.emplace_back("686", "KI");
+        m_countries.emplace_back("855", "KH");
+        m_countries.emplace_back("1869", "KN");
+        m_countries.emplace_back("269", "KM");
+        m_countries.emplace_back("239", "ST");
+        m_countries.emplace_back("421", "SK");
+        m_countries.emplace_back("82", "KR");
+        m_countries.emplace_back("386", "SI");
+        m_countries.emplace_back("850", "KP");
+        m_countries.emplace_back("965", "KW");
+        m_countries.emplace_back("221", "SN");
+        m_countries.emplace_back("378", "SM");
+        m_countries.emplace_back("232", "SL");
+        m_countries.emplace_back("248", "SC");
+        m_countries.emplace_back("7", "KZ");
+        m_countries.emplace_back("1345", "KY");
+        m_countries.emplace_back("65", "SG");
+        m_countries.emplace_back("46", "SE");
+        m_countries.emplace_back("249", "SD");
+        m_countries.emplace_back("1809", "DO");
+        m_countries.emplace_back("1829", "DO");
+        m_countries.emplace_back("1767", "DM");
+        m_countries.emplace_back("253", "DJ");
+        m_countries.emplace_back("45", "DK");
+        m_countries.emplace_back("1284", "VG");
+        m_countries.emplace_back("49", "DE");
+        m_countries.emplace_back("967", "YE");
+        m_countries.emplace_back("213", "DZ");
+        m_countries.emplace_back("1", "US");
+        m_countries.emplace_back("598", "UY");
+        m_countries.emplace_back("262", "YT");
+        m_countries.emplace_back("1", "UM");
+        m_countries.emplace_back("961", "LB");
+        m_countries.emplace_back("1758", "LC");
+        m_countries.emplace_back("856", "LA");
+        m_countries.emplace_back("688", "TV");
+        m_countries.emplace_back("886", "TW");
+        m_countries.emplace_back("1868", "TT");
+        m_countries.emplace_back("90", "TR");
+        m_countries.emplace_back("94", "LK");
+        m_countries.emplace_back("423", "LI");
+        m_countries.emplace_back("371", "LV");
+        m_countries.emplace_back("676", "TO");
+        m_countries.emplace_back("370", "LT");
+        m_countries.emplace_back("352", "LU");
+        m_countries.emplace_back("231", "LR");
+        m_countries.emplace_back("266", "LS");
+        m_countries.emplace_back("66", "TH");
+        m_countries.emplace_back("228", "TG");
+        m_countries.emplace_back("235", "TD");
+        m_countries.emplace_back("1649", "TC");
+        m_countries.emplace_back("218", "LY");
+        m_countries.emplace_back("379", "VA");
+        m_countries.emplace_back("1784", "VC");
+        m_countries.emplace_back("971", "AE");
+        m_countries.emplace_back("376", "AD");
+        m_countries.emplace_back("1268", "AG");
+        m_countries.emplace_back("93", "AF");
+        m_countries.emplace_back("1264", "AI");
+        m_countries.emplace_back("1340", "VI");
+        m_countries.emplace_back("354", "IS");
+        m_countries.emplace_back("98", "IR");
+        m_countries.emplace_back("374", "AM");
+        m_countries.emplace_back("355", "AL");
+        m_countries.emplace_back("244", "AO");
+        m_countries.emplace_back("1684", "AS");
+        m_countries.emplace_back("54", "AR");
+        m_countries.emplace_back("61", "AU");
+        m_countries.emplace_back("43", "AT");
+        m_countries.emplace_back("297", "AW");
+        m_countries.emplace_back("91", "IN");
+        m_countries.emplace_back("35818", "AX");
+        m_countries.emplace_back("994", "AZ");
+        m_countries.emplace_back("353", "IE");
+        m_countries.emplace_back("62", "ID");
+        m_countries.emplace_back("380", "UA");
+        m_countries.emplace_back("974", "QA");
+        m_countries.emplace_back("258", "MZ");
 
-        std::sort(countries.begin(),
-                  countries.end(),
-                  [](Country const & lhs, Country const & rhs) {
-                      return lhs.first < rhs.first;
-                  }
-        );
-
-        uint32_t codeOffset = 0;
-        for (Country const & country : countries)
-        {
-            m_codeOffsets.push_back(codeOffset);
-
-            for (char c : country.first)
-            {
-                m_codes.push_back(c);
-            }
-            m_codes.push_back('\0');
-
-            codeOffset = m_codes.size();
-
-            m_countries.push_back({country.second[0], country.second[1]});
-        }
-
-        std::cout << "i  start   number   country\n";
-        for (uint32_t i = 0; i < m_codeOffsets.size(); ++i)
-        {
-            uint32_t index = m_codeOffsets[i];
-            std::cout << i << " " << index << "  " << (char*)(&m_codes[index]) << "  " << m_countries[i].id[0] << m_countries[i].id[1] << "\n";
-        }
+        // If there are multiple matches then the longest one should be returned.
+        // We therefore sort the country codes so that the longest ones are tested
+        // first.
+        std::sort(std::begin(m_countries), std::end(m_countries),
+                  [](Country const & lhs, Country const & rhs)
+                  {
+                      return lhs.code < rhs.code;
+                  });
     }
-
-
-
-    int compare(char const * number, char const * code)
-    {
-        while (*number != '\0' && *code != '\0')
-        {
-            if (*number != *code)
-            {
-                return *number - *code;
-            }
-
-            ++number;
-            ++code;
-        }
-
-        return 0;
-    }
-
 
 
     CountryId getCountry(char const * number)
     {
         size_t low = 0;
-        size_t high = m_codeOffsets.size();
+        size_t high = m_countries.size();
         while (low != high)
         {
-            size_t const middle = low + (high-low) / 2;
-            uint32_t const codeOffset = m_codeOffsets[middle];
-            char const * const code = &m_codes[codeOffset];
-            int direction = compare(number, code);
-            if (direction == 0)
-            {
-                return m_countries[middle];
-            }
-            else if (direction < 0)
+            size_t middle = low + ((high - low) / 2);
+            int direction = compare(number, m_countries[middle].code);
+            if (direction < 0)
             {
                 high = middle;
             }
+            else if (direction == 0)
+            {
+                while (middle+1 < m_countries.size() && compare(number, m_countries[middle+1].code) == 0)
+                {
+                    ++middle;
+                }
+                return m_countries[middle].id;
+            }
             else
             {
-                low = middle + 1;
+                low = middle+1;
             }
         }
 
-        return CountryId{'\0', '\0'};
+        return not_found;
     }
 
+private:
+    int compare(char const * number, std::string const & code)
+    {
+        for (auto c : code)
+        {
+            if (c != *number)
+            {
+                return *number - c;
+            }
+            ++number;
+        }
+        return 0;
+    }
 
 private:
-    std::vector<CountryId> m_countries;
-    std::vector<uint32_t> m_codeOffsets;
-    std::vector<char> m_codes;
+    std::vector<Country> m_countries;
 };
+
 
 
 int main()
@@ -380,13 +371,12 @@ int main()
     for (int i = 0; i < 1; ++i)
     {
         common::genrateNumbers(numbers, random);
-        for (auto & number : numbers)
+        for (auto const & number : numbers)
         {
             CountryId country = phoneBook.getCountry(number);
             if (country.id[0] != 0)
             {
-                std::cout << "Number '" << number << "' has country "
-                          << country.id[0] << country.id[1] << "\n";
+                std::cout << "Number '" << number << "' has country " << country.id << '\n';
             }
             else
             {
