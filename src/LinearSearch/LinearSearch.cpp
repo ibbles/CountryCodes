@@ -337,6 +337,10 @@ private:
      */
     bool startsWith(char const * number, std::string const & code)
     {
+#if 1
+        auto mismatchPoint = std::mismatch(std::begin(code), std::end(code), number);
+        return mismatchPoint.first == std::end(code);
+#elif 0
         // Does not check for termination of the 'number' string. Assumes that
         // the country code is shorter than the phone number.
         for (auto c : code)
@@ -350,6 +354,16 @@ private:
         }
 
         return true;
+#else
+        char const * c = code.c_str();
+        while (*c != '\0' && *c == *number)
+        {
+            ++c;
+            ++number;
+        }
+
+        return *c == '\0';
+#endif
     }
 
 private:
