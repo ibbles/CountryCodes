@@ -13,7 +13,7 @@ struct CountryId
 {
     char id[2];
 
-    CountryId(char c0, char c1)
+    constexpr CountryId(char c0, char c1)
         : id {c0, c1}
     {
     }
@@ -28,8 +28,7 @@ std::ostream& operator<<(std::ostream & out, CountryId const & id)
 }
 
 
-
-static CountryId not_found {'\0', '\0'};
+static constexpr CountryId not_found {'\0', '\0'};
 
 
 struct Country
