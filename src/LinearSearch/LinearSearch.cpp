@@ -1,12 +1,13 @@
 #include "Common/Common.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
 #include <cstring>
-
+#include <chrono>
 
 
 struct CountryId
@@ -375,10 +376,17 @@ int main()
 {
     PhoneBook phoneBook;
 
-    std::array<char[9], 1000> numbers;
+    constexpr int numbersPerIteration = 1000;
+    constexpr int numIterations = 100;
+    constexpr int numNumbers = numbersPerIteration * numIterations;
+
+    std::array<char[9], numbersPerIteration> numbers;
     common::Random random;
 
-    for (int i = 0; i < 1; ++i)
+    int numMatches = 0;
+
+    auto timeStart = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < numIterations; ++i)
     {
         common::genrateNumbers(numbers, random);
         for (auto const & number : numbers)
@@ -386,12 +394,19 @@ int main()
             CountryId country = phoneBook.getCountry(number);
             if (country.id[0] != 0)
             {
-                std::cout << "Number '" << number << "' has country " << country.id << '\n';
+                ++numMatches;
+                //std::cout << "Number '" << number << "' has country " << country << '\n';
             }
             else
             {
-                std::cout << "No match for number '" << number << "'\n";
+                //std::cout << "No match for number '" << number << "'\n";
             }
         }
     }
+    auto timeEnd = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(timeEnd - timeStart);
+
+    std::cout << "Found " << numMatches << " matches. "
+              << "Took " << duration.count() << " s. "
+              << duration.count() / numNumbers << " s / number.\n";
 }
