@@ -424,6 +424,7 @@ public:
     }
 
 private:
+#if STRING_FORMAT == USE_STD_STRING
     /**
      * Returns true if the given number starts with the given country code.
      *
@@ -465,6 +466,7 @@ private:
     #error
 #endif
     }
+#endif
 
 private:
 #if STRING_FORMAT == USE_STD_STRING
