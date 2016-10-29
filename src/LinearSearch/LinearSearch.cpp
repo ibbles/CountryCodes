@@ -483,6 +483,15 @@ private:
 
 int main()
 {
+#if 0
+    std::cout << "Configuration:\n";
+    std::cout << "  STRING_FORMAT: " << STRING_FORMAT << "\n";
+#if STRING_FORMAT == USE_STD_STRING
+    std::cout << "  MATCH_ALGORITHM: " << MATCH_ALGORITHM << "\n";
+#endif
+    std::cout << "\n";
+#endif
+
     PhoneBook phoneBook;
 
     constexpr int numbersPerIteration = 1000;
