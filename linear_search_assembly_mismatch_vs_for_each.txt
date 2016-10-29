@@ -1,0 +1,60 @@
+
+## Arguments
+rdi = number : char *
+rsi = code : std::string &
+
+
+##
+## mismatch
+##
+
+mov rax, [rsi]		// Move buffer pointer from string to rax.
+mov rdx, [rsi+8]	// Move size from string to rdx.
+lea r8, [rax + rdx]	// compute std::string::end().
+
+// We are now done with rsi.
+
+test rdx, rdx	// Jump to `done` if rdx, i.e. code size, is zero.
+je done		// Assuming that rdx is the size of `code`.
+
+loop_start:
+movzx esi, [rdi]	// Load a digit of `number` to esi.
+movzx ecx, [rax]	// Load a digit of `code` to ecx.
+cmp ecx, esi		// Check for mismatch.
+jne done		// Jump to `done` if mismatch.
+inc rax			// Step `code` pointer.
+inc rdi			// Step `number` pointer.
+dec rdx			// Decrement register holding number of chars left to check.
+jne loop_start		// Back up again if still have chars to test.
+
+done:
+cmp rax, r8	// Check if `code` pointer reached end().
+sete al		// Return true if `code` pointer reached end, i.e. all chars were equal.
+
+
+##
+## for each
+##
+
+mov     rcx, [rsi + 8]	// Move size from string to rcx.
+mov     al, 1		// Assume we will return 1.
+test    rcx, rcx	// Test if given empty string.
+je      return		// Return 1 if given no characters.
+mov     rdx, [rsi]	// Move buffer pointer from string to rdx.
+
+loop_start:
+movzx   r8d, [rdi]	// Load a digit of `number`.
+movzx   esi, [rdx] 	// Load a digit of `code`.
+cmp     esi, r8d	// Check for mismatch.
+jne     return_0	// Return false if mismatch.
+inc     rdi		// Step `number` pointer.
+inc     rdx		// Step `code` pointer.
+dec     rcx		// Decrement register holding number of chars left to check.
+jne     loop_start	// Back up again if still have chars to test.
+
+return:
+ret
+
+return_0:
+xor     eax, eax
+ret
