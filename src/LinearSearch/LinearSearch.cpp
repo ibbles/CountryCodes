@@ -380,7 +380,7 @@ public:
     }
 
 
-    CountryId getCountry(char const * number)
+    CountryId getCountry(char const (&number)[9])
     {
 #if STRING_FORMAT == USE_STD_STRING
         for (auto & country : m_countries)
@@ -435,7 +435,7 @@ private:
      * @param code The country code to search for.
      * @return True if the number starts with the country code.
      */
-    bool startsWith(char const * number, std::string const & code)
+    bool startsWith(char const (&number)[9], std::string const & code)
     {
 #if MATCH_ALGORITHM == USE_MISMATCH
         auto mismatchPoint = std::mismatch(begin(code), end(code), number);
