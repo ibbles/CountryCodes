@@ -438,8 +438,8 @@ private:
     bool startsWith(char const * number, std::string const & code)
     {
 #if MATCH_ALGORITHM == USE_MISMATCH
-        auto mismatchPoint = std::mismatch(std::begin(code), std::end(code), number);
-        return mismatchPoint.first == std::end(code);
+        auto mismatchPoint = std::mismatch(begin(code), end(code), number);
+        return mismatchPoint.first == end(code);
 #elif MATCH_ALGORITHM == USE_FOR_EACH
         // Does not check for termination of the 'number' string. Assumes that
         // the country code is shorter than the phone number.
