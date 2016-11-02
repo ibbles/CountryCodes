@@ -8,6 +8,7 @@
 
 #include <cstring>
 #include <chrono>
+#include <iomanip>
 
 
 #define USE_STD_STRING 1
@@ -525,6 +526,6 @@ int main()
     auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(timeEnd - timeStart);
 
     std::cout << "Found " << numMatches << " matches. "
-              << "Took " << duration.count() << " s. "
-              << duration.count() / numNumbers << " s / number.\n";
+              << "Took " << std::setprecision(7) << std::fixed << duration.count() << " s. " << std::defaultfloat
+              << std::setw(14) << duration.count() / numNumbers << " s / number.\n";
 }
