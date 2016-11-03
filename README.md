@@ -126,32 +126,33 @@ made the following assumptions:
 ## Linear search
 
 The linear search algorithm is implemented in `LinearSearch.cpp` and is as
-straightforward as it gets. A `vector` contains the country code-id pairs,
+straightforward as it gets. A `vector` contains the `(country code, id pairs)`,
 sorted by code length, and a number lookup simply iterates over the vector and
-compares digit by digit until the first match is found.
+for each country compares the current phone number with the country code digit
+by digit until the first match is found.
 
 Central to this method is the implementation of
 
 ```c++
-bool startsWith(char const *number, std::string const & code)
+bool startsWith(char const (&number)[9], std::string const & code)
 ```
 *Signature of code testing function.*
 
 which determines if a given `number` starts with the given country `code`. We
 start with the most natural implementation, which is a call to `std::mismatch`.
-This is a library function that returns the point at which two ranges first
-differ. In our case it tells us where the number no longer matches the country
-code. If the algorithm is unable to find any mismatch, then the country code is
-a prefix of the number and we have found our country.
+This is a standard library function that returns the point at which two ranges
+first differ. In our case it tells us where the number no longer matches the
+country code. If the algorithm is unable to find any mismatch then the country
+code is a prefix of the number and we have found our country.
 
 ```c++
-auto mismatchPoint = std::mismatch(std::begin(code), std::end(code), number);
-return mismatchPoint.first == std::end(code);
+auto mismatchPoint = std::mismatch(begin(code), end(code), number);
+return mismatchPoint.first == end(code);
 ```
-*Implementation using the standard library method `mismatch`*
+*Implementation using the standard library method `mismatch`.*
 
 Trying to improve upon the standard library implementation, we write the digit
-testing loop manually. First using a `for each` loop,
+testing loop manually. First using a `for each` loop:
 
 ```c++
 for (auto c : code) {
@@ -285,7 +286,8 @@ give any hints as to why that is.
 Next up is `stalled-cycles-frontend` and here we get to the interesting part.
 The `std::mismatch` version has 17,145,522 stalled cycles which perf report as
 7.68% of all cycles. The for-each version has 287,710,712, or 43,76%, cycles
-stalled in the front end.
+stalled in the front end. That's significant. If correct, the CPU is doing
+nothing almost half of the time.
 
 
 

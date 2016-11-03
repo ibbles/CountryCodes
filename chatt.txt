@@ -1,0 +1,371 @@
+B
+Bara lite kod
+Det finns ett antal landskoder för telefonnummer
+så skriv en funktion som tittar på ett nummer och kollar vilken landskod den matchar om nagon. (bara koden, inte landsnamnet)
+Hur snabbt kan din algo göra detta 100000ggr
+Ska leta upp koderna
+
+M
+Vad är formatet på nummren?
+Kan det hänga att landskoden saknas?
+
+B
+Om koden saknas kan du strunta i.
+Så input är
+/+{1-9}{0-9}*
+Saknar specialtecken på min mobil
+För mina tester använde jag bara Range(1,100000) => hashCode.toString
+Så ett gäng /, en siffra som inte är 0 och sen siffror.
+Ett plus, 1-9, flera 0-9
+http://country.io/phone.json
+jag använde den där som input efter jag rensat bort - och delat upp dom som har " and "
+Min kod verkar köra det på 50-100 ms
+I scala
+
+M
+Och sen letar du landskoder i en massa hash codes?
+
+B
+Precis, bara för skojs skull
+Nått att fundera på efter lunch.
+
+M
+Räknar du in hash-kodandet i tiden?
+
+B
+Jo.
+
+M
+Kan inte hashCode.toString innehålla a-f också?
+
+B
+"asdf".hashCode
+res17: Int = 3003444
+
+M
+Hur många siffror i ett nummer?
+Vissa är ju tomma strängen. Hur ska man hantera det? Alla strängar matchar ju en leading empty string.
+Och +och - i nummren, dom ska jag bara filtrera bort eller?
+"AX": "+358-18" tolkas som "AX": "35818"
+
+B
++ och - kan du filtrera bort (Antagligen fel i datan)
+Du ska match den längsta möjliga.
+"+1809123" => "1809"
+"+18101231" => "1"
+Koden 1809 och 1 finns
+men inte 1810
+
+M
+Det skulle precis bli min nästa fråga.
+100000 8-digit numbers tar 60 ms för mig. Ska experimentera mer imorgon.
+Finns ju flera länder som har samma kod.
+
+B
+Va?
+
+M
+Antar att man kan returnera vilken man vill då.
+
+B
+Du vill bara returnera koden i min spec
+Med vilka är dubletterna
+
+M
+61 har CC, CX och AU.
+Eller snarare, CC, CX och AU har alla koden 61.
+
+B
+Detta börjar likna soppan med tidzoner
+
+M
+~10 ms när jag inte hör hash-uppslag på nummer längre än 6.
+Kör 4 trådar.
+
+B
+Hmm, trådar. Känder
+* känns fuskigt
+
+M
+Vadå, JVM har också trådar.
+
+B
+Nä, men jag tänkte att input är ett nummer i tagtt
+Ska pröva en grej.
+Alltså mac
+         Alt space är någon av unicode whitespace
+\u00a0
+
+M
+Är det ett problem?
+
+B
+Osynliga tecken som ger kompileringsfel
+
+M
+Det är ett problem.
+
+B
+Mitt trådningsförsök blev flera gånger långsammare
+
+M
+Det är också ett problem.
+
+B
+Njae, jag försökte använda en tråd per storlek
+Så det blev för mycket kommunikation
+Så istället för  några hashmapsindexeringar försökte jag kolla alla samtidigt
+Men det är bra att veta.
+
+M
+Var skedde kommunikationen?
+
+B
+Jag använde actors.
+Så mailboxes och futures
+
+M
+Jag försöker bygga en trie. Inte trivialt.
+
+B
+Min bygges med noderna
+Valid(array(10))
+InValid(array(10))
+
+Invalid(1) 
+  1 -> Valid(1, 3)
+       1 -> Invalid(2, 3)
+       3 -> Valid()
+Om du förstår?
+
+M
+Nej.
+
+B
+Så rotnoden är ogiltig för det skulle motsvara en tom sträng.
+
+M
+Vad betyder # i parantesen?
+1:valid
+11: invalid
+13: valid
+
+B
+Rotnoden är en
+Invalid(1,2,3,4,5,6,7,8,9) d.v.s den innehåller en array med referenser till noder för 1-9
+
+M
+Ok, så under 11 finns 112 och 113.
+Fast dom skrev du inte ut.
+
+B
+Mina noder innehåller ingen information förutom ytterligare barn
+Och nej, den var inte korrekt
+Utan actors blir koden 3 ggr snabbare.
+(d.v.s. jag använder FutureTask
+)
+haha
+du jag tänkte inte ens på en sekund att vi har helt olika processorer...
+
+M
+Jo, vi måste testa varandras sen.
+Ska fara möta emma nu så det kommer nog inte bli nått mer kodande ikväll...
+
+B
+Okej! Ses senare!
+Om du skickar din c++ kod borde jag kunna kompilera den och se
+
+M
+Kanske skulle sätta upp ett projekt på GitHub för det här.
+Kommer det nån fil?
+
+B
+inte vad jag ser
+http://www.filedropper.com/ kanske?
+
+M
+http://www.filedropper.com/countrynrhash
+
+B
+kompilera med?
+Took 19.3968 ms
+Bertils-MBP:Downloads bernil$ ./a.out 
+Took 18.833 ms
+Bertils-MBP:Downloads bernil$ ./a.out 
+Took 19.8024 ms
+Bertils-MBP:Downloads bernil$ 
+Bertils-MBP:Downloads bernil$ ./a.out 
+Took 19.2425 ms
+Bertils-MBP:Downloads bernil$ ./a.out 
+Took 21.2012 ms
+Bertils-MBP:Downloads bernil$ ./a.out 
+Took 19.1565 ms
+Bertils-MBP:Downloads bernil$ 
+
+M
+/usr/bin/c++ -O3 -DNDEBUG -Wall -std=gnu++11 -pthread
+
+B
+Took 7.63213 ms
+Bertils-MBP:Downloads bernil$ ./a.out 
+Took 7.54805 ms
+Bertils-MBP:Downloads bernil$ ./a.out 
+Took 7.49514 ms
+Sätter man multihreaded = 0 kompilerar inte koden
+
+M
+Det var mer lafom tider. Borde kompilera... vad säger den?
+
+B
+Jag är nere på  time: 32.611721ms med singletråden
+ error: no matching function for call to 'generateNumber
+484:9
+countryNr_hash.cpp:374:6: note: candidate function not viable: requires 2 arguments, but 1 was provided
+Kanske vettigare
+Jag stoppar dit en rand
+
+M
+Ok
+
+B
+Building phone book took 5.755e-05 s
+100000 numbers took 0.035821 s
+Found 81722 matches.
+
+B
+Så få är vi typ lika?
+599.467027ms
+Typ lika.
+Googles ger 600ms
+
+M
+Googles?
+
+B
+libphonenumber
+Min multitrådade är mycket långsammare än din
+15ms typ, med 4 trådar
+Det är en coinflip om jag vinner något på att köra den i trådar 😮
+
+M
+Kanske kan tråda på något annat sätt som fungerar bättre. Nån producer/consumer variant kanske.
+En smiley.
+
+B
+Med fler siffor blir min kod mer stabil.
+10 +- 2 ms om den får värma upp ordentligt
+148.416376ms
+29.831113ms
+30.122774ms
+26.232864ms
+12.592177ms
+Så ser tiderna från kall jvm till varm jvm ut
+
+M
+Är det JIT-en som kommer in och optimerar bättre?
+
+Kör du samma range(1,100000) om och om igen i en loop?
+Vad händer om man gör samma sak med min?
+
+B
+Jag trycker pilupp i min REPL
+
+M
+ok
+
+B
+Din är mer som en klocka.
+
+M
+Antar att det är samma sak.
+
+B
+30ms +- 5
+nej
+32 +- 2
+Imorgon ska jag skriva i rust och kolla om jag kan komma ner i din tid
+Men singeltrådade verker vi ändå ha rätt lika
+
+M
+Ska bli spännande att se om jag får till någon trie.
+
+B
+Men jag förstår inte varför jag inte får en bättre speedup av att tråda 
+Range(0, 100000).par.flatMap(x => matchByTree("+" + x.hashCode()))
+Enkelt att parallelisera.
+Har du fått tid att kika på att bygga en trie
+
+M
+Håller på precis nu.
+
+B
+☺
+
+M
+Men jag är nog inte i toppform i helgen. Tog mig typ en kvart att skriva en in-place prefix sum.
+
+B
+"in-place prefix sum" huh+
+
+M
+Men förbannat.
+Här jag jag suttit och skrivit AVX2-intrinsics och så upptäcker jag att min processor inte stödjer det.
+Börar bli lite väl skakiga siffror så jag gjorde en mean av 1000 körningar av varje i Octave:
+
+>> load 'trie.dat';
+>> mean(trie)
+ans = 3.2991
+
+>> load 'hash.dat'
+>> mean(hash)
+ans = 5.7447
+
+Har har kodat på en hel del nu och har inga unittester så jag vet inte ens om den gör rätt fortfarande.
+Hittade två buggar i min trie-implementation.
+Den första var egentligen i lastbalaseringen för trådarna och gjorde att de blev idle trots att det fanns jobb kvar att göra.
+
+Den andra var att den fortsatte söka ner i trädet även när det inte behövdes.
+
+B
+3ms...
+
+M
+Det var inte illa.
+
+B
+Alltsa din
+
+M
+Jag kommer under 2ms nån gång ibland med : ~4 trådar.
+Lite olika från körning till körning.
+
+B
+Det är tiden det tar för mig att iterera över hashcod
+
+M
+0.17% av L1 cache loads är cache misses. Det är inte dåligt.
+Funkar det att köra perf på din? Med VM och allt tänker jag. Borde väl fungera ändå?
+perf stat -d <your command>
+
+B
+Undra om det finns verktyg som spelar in ett programs minnesanvändning för att köras samtidig
+Som perftester
+
+M
+Man vill nog testa en sak i taget. Inte prestanda och minnesanvändning sammtidigt.
+
+B
+Jag tänker att prestandan blir ju påverkad av vad resten av programmet gör
+
+M
+Jo, förståss. 
+Massif är en heap profiler, om det är vad du är ute efter. Men eftersom du lever i en VM så vill du nog använda VM-specifika verktyg.
+Förstår inte riktigt vad du vill mäta och samtidigt med vad?
+
+B
+Jag tänker att en algoritm kanske kan förstöra olika mycket för resten av koden. Men det gör man ju bäst med en profiler jämfört på två git branches
+
+M
+Hur stor del av tiden har du i .hashCode och hurstor del är faktiska uppslag?
+https://drive.google.com/file/d/0ByfCQ4MBd1l0MFpidTFwV1lnN19yQ3hJdmw2eWN5NzVta0E0/view?usp=drivesdk
+Problem med CrashPlan?
