@@ -126,15 +126,15 @@ made the following assumptions:
 ## Linear search
 
 The linear search algorithm is implemented in `LinearSearch.cpp` and is as
-straightforward as it gets. A `vector` contains the `(country code, id pairs)`,
-sorted by code length, and a number lookup simply iterates over the vector and
-for each country compares the current phone number with the country code digit
-by digit until the first match is found.
+straightforward as it gets. A `vector` contains the `(country code, country id)`
+pairs, sorted by code length, and a number lookup simply iterates over the
+vector and for each country compares the current phone number with the country
+code digit by digit until the first match is found.
 
 Central to this method is the implementation of
 
 ```c++
-bool startsWith(char const (&number)[9], std::string const & code)
+bool startsWith(char const * number, std::string const & code)
 ```
 *Signature of code testing function.*
 
@@ -164,7 +164,7 @@ return true;
 ```
 *Implementation using a for each loop over the digits of the code.*
 
-Thirdly we can implement this loop in a C style fashion as follows.
+and secondly we implement this loop in a C style fashion as follows.
 
 ```c++
 char const * c = code.c_str();
@@ -205,7 +205,7 @@ Let's figure out why. First up is `perf stat`.
        0,061041527 seconds time elapsed
 ```
 ```
-Performance counter stats for './for':
+Performance counter stats for './for_each':
 
         172,374141      task-clock:u (msec)       #    0,998 CPUs utilized          
                  0      context-switches:u        #    0,000 K/sec                  
@@ -269,27 +269,99 @@ since they all, the first time they run, process a bunch of newly allocated
 memory. The one in the constructor happens, I believe, because the on-stack
 allocation of the `Random` object causes the stack to grow past a page boundary.
 The details are unclear. The `Random` class contains an internal buffer of
-random bytes that is pre-fills. This buffer is 2048 * 4 = 8192 bytes of 2 pages.
-Thus filling it must generate at least two page faults. Most likely it won't be
-page boundary aligned so we'll get three. The `std::vector` holding the country
-data contains 246 elements each requiring 40 bytes. This totals 9840 bytes,
-which is a bit over two pages. The three page faults in `fillCountries` are thus
-explained.
+random bytes that is pre-fills. This buffer is 2048 * 4 = 8192 bytes, or 2
+pages. Thus filling it must generate at least two page faults. Most likely it
+won't be page boundary aligned so we'll get three, as was reported by `perf`.
+The `std::vector` holding the country data contains 246 elements each requiring
+40 bytes. This totals 9840 bytes, which is a bit over two pages. The three page
+faults in `fillCountries` are thus explained.
 
 Next in the perf output is cycles. The run using `std::mismatch` measured
 223,195,029 cycles while the one using the for-each loop used 657,547,329. Since
 the application is heavy on computation and does very little IO the cycle count
 is basically a measure of time. The large difference is expected since the
-application timers reported lower throughput of for the for loop, but it doesn't
-give any hints as to why that is.
+application timers reported lower throughput for the for loop, and therefore it
+consumes more cycles, but `perf` doesn't give any hints as to why that is.
 
 Next up is `stalled-cycles-frontend` and here we get to the interesting part.
 The `std::mismatch` version has 17,145,522 stalled cycles which perf report as
 7.68% of all cycles. The for-each version has 287,710,712, or 43,76%, cycles
 stalled in the front end. That's significant. If correct, the CPU is doing
-nothing almost half of the time.
+nothing almost half of the time. There are a number of reasons for why the CPU
+may stall. It may be waiting for the next instructions to be loaded from memory,
+a long-latency instruction to finish, or for a data dependency to be resolved.
+
+Inspecting the assembly may provide some answers. The following two listings are
+taken from `perf report` after recording `stalled-cycles-frontend` events using
+`perf`. Each row represents an instruction in the program binary. The first
+column is the number of `stalled-cycles-frontend` samples taken at that
+instruction, the second column, which is mostly empty, are byte offsets used by
+jump instructions. The third column is the instruction itself and what remains
+on the row are the arguments to the instruction.
 
 
+```
+Inner loop, mismatch:
+
+121 │250:┌─→movzx  ebx,BYTE PTR [rdx+rbp*1]
+418 │    │  movzx  edi,BYTE PTR [rax+rbp*1]
+ 32 │    │  cmp    edi,ebx
+    │    │↓ jne    270
+ 21 │    │  inc    rbp
+418 │    │  cmp    rcx,rbp
+    │    └──jne    250
+    │     ↓ jmp    290  
+```
+
+
+```
+Inner loop, for_each:
+
+5724 │250:┌─→movzx  ebx,BYTE PTR [rdx+rbp*1]
+7785 │    │  movzx  r15d,BYTE PTR [rax+rbp*1]
+     │    │  cmp    r15d,ebx
+     │    │↓ jne    270
+ 133 │    │  inc    rbp
+ 921 │    │  cmp    rcx,rbp
+     │    └──jne    250
+   4 │     ↓ jmp    280
+```
+
+Both surprisingly and unsurprisingly, they are virtually identical.
+Unsurprisingly because that was our initial guess. They do the same work, so why
+would different instructions be generated? Surprisingly because we see so very
+different performance characteristics.
+
+A walkthrough of the code snippets. Remember the original C++ code.
+
+```c++
+for (auto c : code) {
+    if (c != *number)
+        return false;
+    ++number;
+}
+```
+*Implementation using for-each loop.*
+
+They both start with two loads of a pair of byte from memory into a pair of
+registers. This is loading `c` and the dereferencing of `number` in the C++
+code. The mismatch version loads into `ebx` and `edi`, while the for-each
+version loads into `r15d` instead of `edi`. All general purpose registers, so I
+don't see any reason for a performance difference yet. `rdx` and `rax`, used in
+the address calculation, holds pointers to the starts of the two strings we are
+comparing, and `rbp` holds the index of the characters we are currently
+comparing. After the load the two newly filled registers are compared using
+`cmp` and if not equal we jump (`jmp`) out of the loop. This is the `if (c !=
+*number) return false` part of the C++ code. Next `rbp` is incremented. Since
+`rbp` is used in both loads, this single instruction does both the increment of
+`number` and the iterator increment hidden inside the for-each loop header.
+After the increment a second comparison is made. This comparison tests if `rbp`
+has reached the end of the string, which was previously stored in `rcx`. I not
+equal, i.e., there are more characters to test, then the program jumps back to
+the start of the loop.
+
+Since the generated assembly code is so similar between the two version, the
+reason for the performance difference must lie somewhere else.
 
 The implementation uses `std::string` for storing the country codes. This may be
 sub-optimal since `std::string` stores its data on the heap and because of this
