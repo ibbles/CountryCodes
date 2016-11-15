@@ -335,33 +335,134 @@ different performance characteristics.
 A walkthrough of the code snippets. Remember the original C++ code.
 
 ```c++
+auto mismatchPoint = std::mismatch(begin(code), end(code), number);
+return mismatchPoint.first == end(code);
+```
+*Implementation using the standard library method `mismatch`.*
+
+```c++
 for (auto c : code) {
     if (c != *number)
         return false;
     ++number;
 }
+return true;
 ```
 *Implementation using for-each loop.*
 
-They both start with two loads of a pair of byte from memory into a pair of
+
+They both start with loads of a pair of bytes from memory into a pair of
 registers. This is loading `c` and the dereferencing of `number` in the C++
 code. The mismatch version loads into `ebx` and `edi`, while the for-each
 version loads into `r15d` instead of `edi`. All general purpose registers, so I
 don't see any reason for a performance difference yet. `rdx` and `rax`, used in
-the address calculation, holds pointers to the starts of the two strings we are
-comparing, and `rbp` holds the index of the characters we are currently
-comparing. After the load the two newly filled registers are compared using
-`cmp` and if not equal we jump (`jmp`) out of the loop. This is the `if (c !=
+the address calculation, presumably holds pointers to the starts of the two
+strings we are comparing, and `rbp` holds the index of the characters we are
+currently comparing. After the loads the two newly filled registers are compared
+using `cmp` and if not equal we jump (`jne`) out of the loop. This is the `if (c !=
 *number) return false` part of the C++ code. Next `rbp` is incremented. Since
 `rbp` is used in both loads, this single instruction does both the increment of
 `number` and the iterator increment hidden inside the for-each loop header.
 After the increment a second comparison is made. This comparison tests if `rbp`
-has reached the end of the string, which was previously stored in `rcx`. I not
-equal, i.e., there are more characters to test, then the program jumps back to
-the start of the loop.
+has reached the end of the string, which was, presumably, previously stored in
+`rcx`. If not equal, i.e., there are more characters to test, then the program
+jumps back to the start of the loop.
 
 Since the generated assembly code is so similar between the two version, the
 reason for the performance difference must lie somewhere else.
+
+Let's expand the assembly listing a bit. To understand the following we first
+need to take a look at the surrounding C++ code. The method containing the inner
+loop is called from a method named `getCountry`:
+
+```c++
+CountryId getCountry(char const (&number)[9]) {
+    for (auto & country : m_countries) {
+        if (startsWith(number, country.code)) {
+            return country.id;
+        }
+    }
+    return not_found;
+}
+```
+*getCountry*
+
+`CountryId` is a struct containing a two element char array and `not_found` is a
+`constexpr CountryId` having `'\0'` in both array slots. This is the part of the
+code that makes this implementation a linear search.
+
+`getCountry` is called from `main` in a loop with the following layout:
+
+```c++
+for (int i = 0; i < numIterations; ++i) {
+    common::genrateNumbers(numbers, random);
+    for (auto const & number : numbers) {
+        CountryId country = phoneBook.getCountry(number);
+        if (country.id[0] != 0) {
+            ++numMatches;
+        }
+    }
+}
+```
+*Main loop*
+
+In the above, `numbers` is declared as `std::array<char[9], numbersPerIteration>
+numbers;`, `numIterations` is 100 and `numbersPerIteration` is 1000. That is,
+for each outer iteration we first generate a thousand phone numbers and then
+check them one by one. We do this one hundred times. The second argument to
+`generateNumbers`, `random`, is a pseudo-random number generator that is
+discussed in a separate section.
+
+
+```
+mismatch:
+
+    │       mov    r8,QWORD PTR [rsp+0x4350]   // Load 8 bytes from memory.   two pointers to 8     Is this the
+  1 │       mov    r13,QWORD PTR [rsp+0x4358]  // Load 8 bytes from memory.   byte values perhaps?  std::array?
+    │       cmp    r8,r13                      // Check if the two values just loaded are equal.
+    │       lea    rdx,[rsp+0x2028]            // Load a completely different value from memory.
+    │     ↓ jne    230                         // lea sets no flags, so jne for r8, r13.
+    │223:┌─→movzx  eax,BYTE PTR [r11+0x20]     // Was r8, r13 was equal. Load a byte from memory.
+    │    │↓ jmp    295                         // Jump past loop.
+    │    │  nop                                // NEVER REAHCED.
+    │230:│  mov    r11,r8                      // Copy r8 (pointer?) to r11.
+ 47 │233:│  mov    rax,QWORD PTR [r11]         // Dereference the pointer. rax = *r11.
+  6 │    │  mov    rcx,QWORD PTR [r11+0x8]     // Dereference the pointer. rcx = *(r11 + 1)
+    │    │  test   rcx,rcx                     // Did the second dereference find a zero?
+ 79 │    │  mov    ebp,0x0                     // ebp = 0.
+ 52 │    │  mov    r14,rax                     // 
+  2 │    │↓ je     276
+    │    │  nop
+129 │250:│  movzx  ebx,BYTE PTR [rdx+rbp*1]
+390 │    │  movzx  edi,BYTE PTR [rax+rbp*1]
+ 29 │    │  cmp    edi,ebx
+    │    │↓ jne    270                      // Found mismatched character, return false.
+ 26 │    │  inc    rbp
+440 │    │  cmp    rcx,rbp
+    │    │↑ jne    250
+    │    │↓ jmp    290
+    │    │  nop
+ 93 │270:│  add    rbp,rax
+111 │    │  mov    r14,rbp
+ 42 │276:│  add    rax,rcx
+  3 │    │  cmp    r14,rax
+ 88 │    └──je     223
+ 70 │       add    r11,0x28
+ 89 │       cmp    r11,r13
+ 37 │     ↑ jne    233
+    │       xor    eax,eax
+    │     ↓ jmp    295
+    │       nop
+ 38 │290:   movzx  eax,BYTE PTR [r11+0x20]
+  3 │295:   cmp    al,0x1
+    │       sbb    r15d,0xffffffff
+    │       add    rdx,0x9
+    │       cmp    rdx,r10
+    │     ↑ jne    230
+    │2a4:   inc    r9d
+  1 │       cmp    r9d,0x64                 // 0x64 == 100. We do 100 generate-test iterations.
+    │     ↑ jne    e0                       // Restart outermost loop, i.e., generate a new set of numbers.
+```
 
 The implementation uses `std::string` for storing the country codes. This may be
 sub-optimal since `std::string` stores its data on the heap and because of this
